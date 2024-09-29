@@ -1,9 +1,7 @@
 class MatchmakingQueueController < ApplicationController
   before_action :set_languages
-
-
   def play_now
-    authorize! :play_now, MatchmakingQueue
+    authorize! :play_now, :all
     @player = current_user
 
     @last_matches = Match.where(
@@ -35,7 +33,7 @@ class MatchmakingQueueController < ApplicationController
   end
 
   def find_opponent
-    authorize! :find_opponent, MatchmakingQueue
+    authorize! :find_opponent, :all
     player = current_user
     if player
       MatchmakingQueueService.add_to_queue(player, @selected_language)
@@ -47,6 +45,7 @@ class MatchmakingQueueController < ApplicationController
   end
 
   def cancel
+    authorize! :cancel_queue, :all
     player = current_user
     MatchmakingQueueService.remove_player(player, @selected_language)
     redirect_to play_now_path, notice: "Opponent search cancelled"

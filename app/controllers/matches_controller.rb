@@ -9,7 +9,8 @@ class MatchesController < ApplicationController
     end
   end
   def execute_code
-    response = CodeExecutionService.execute_code(params[:code], params[:language])
+    code = generate_code(params[:code], @challenge.test_template)
+    response = CodeExecutionService.execute_code(code, params[:language])
     unless response.nil?
 
       @result = JSON.parse(response.body)["Result"]
@@ -18,7 +19,7 @@ class MatchesController < ApplicationController
           @output = @result
           if @result.strip == "Winner"
             loser = current_user == @match.player_1 ? @match.player_2 : @match.player_1
-            set_winner(current_user, loser, @match, false)
+            set_winner(current_user, loser)
           end
       else
         @output = @error
@@ -27,12 +28,30 @@ class MatchesController < ApplicationController
     render json: { output:  @output}
   end
 
+  def chat_messages
+    match = Match.find(params[:match_id])
+    @chat_message = match.chat_messages.new(chat_message_params)
+    @chat_message.user = current_user
+    authorize! :create, @chat_message
+
+    if @chat_message.content == ""
+    elsif @chat_message.content.length > 500
+    else
+      if @chat_message.save
+        ChatChannel.broadcast_to match, render_to_string(partial: 'chat_messages/chat_message', locals: { chat_message: @chat_message })
+        head :ok
+      else
+        head :unprocessable_entity
+      end
+    end
+  end
+
   def surrender
     if @match
       winner = current_user == @match.player_1 ? @match.player_2 : @match.player_1
       loser = @match.player_2 == winner ? @match.player_1 : @match.player_2
       @match.update(status: "finished")
-      set_winner(winner, loser, @match, true)
+      set_winner(winner, loser, true)
     end
   end
 
@@ -65,17 +84,17 @@ class MatchesController < ApplicationController
     end
   end
 
-  def set_winner(winner, loser, match, surrendered)
-    match.chat_messages.destroy_all
-    match.update(status: "finished", winner_id: winner.id)
+  def set_winner(winner, loser, surrendered=false)
+    @match.chat_messages.destroy_all
+    @match.update(status: "finished", winner_id: winner.id)
 
-    difficulty = Challenge.find_by(id: match.challenge_id).difficulty
+    difficulty = Challenge.find_by(id: @match.challenge_id).difficulty
 
     LeaderboardService.update_score(winner.id, calculate_lp_gain(difficulty))
     LeaderboardService.update_score(loser.id, -calculate_lp_loss(difficulty, surrendered))
 
-    ActionCable.server.broadcast "submission_#{match.id}_#{winner.id}", { status: 'winner', message: "You won #{calculate_lp_gain(difficulty)}LP"}
-    ActionCable.server.broadcast "submission_#{match.id}_#{loser.id}", { status: 'loser', message: "You lost #{calculate_lp_loss(difficulty, surrendered)}LP"}
+    ActionCable.server.broadcast "submission_#{@match.id}_#{winner.id}", { status: 'winner', message: "You won #{calculate_lp_gain(difficulty)}LP"}
+    ActionCable.server.broadcast "submission_#{@match.id}_#{loser.id}", { status: 'loser', message: "You lost #{calculate_lp_loss(difficulty, surrendered)}LP"}
   end
 
   def calculate_lp_gain(difficulty)
@@ -99,6 +118,14 @@ class MatchesController < ApplicationController
     else
       return 5 + penalty
     end
+  end
+
+  def generate_code(code, test_template)
+    code+"\n"+test_template
+  end
+
+  def chat_message_params
+    params.require(:chat_message).permit(:user_id, :content)
   end
 end
 

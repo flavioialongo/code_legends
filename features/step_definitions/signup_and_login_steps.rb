@@ -28,7 +28,7 @@ Then("I should see a confirmation success message") do
   expect(page).to have_selector('.flash-notice', text: 'Please check your email to confirm your account.')
 end
 
-When("I log in with {string} and {string}") do |email, password|
+When("I login with {string} and {string}") do |email, password|
   visit login_path
   fill_in 'email', with: email
   fill_in 'password', with: password

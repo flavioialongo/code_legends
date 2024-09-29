@@ -54,12 +54,7 @@ Rails.application.routes.draw do
     post 'execute_code', to: 'matches#execute_code'
     post 'surrender', to: 'matches#surrender'
     post 'timeout', to: 'matches#timeout'
-
-  end
-  resources :matches do
-    resources :chat_messages, only: [:create]
-    post 'execute_code', on: :member
-    post 'surrender', on: :member
+    post 'chat_messages', to: 'matches#chat_messages'
   end
 
   # CHALLENGE REQUESTS ROUTES

@@ -11,6 +11,7 @@ class Ability
           can :surrender, Match
           can :play_now, :all
           can :find_opponent, :all
+          can :cancel_queue, :all
         else
           if user.admin?
             can :manage, :all
@@ -39,8 +40,8 @@ class Ability
             end
             can :play_now, :all
             can :find_opponent, :all
+            can :cancel_queue, :all
             can :create, ChatMessage
-            can :cancel, MatchmakingQueue
             can :create, ChallengeProposal
             can :read, ChallengeProposal
           end

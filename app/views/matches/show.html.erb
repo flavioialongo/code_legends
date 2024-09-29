@@ -165,7 +165,7 @@
         // Gather form data
         const formData = new FormData(form);
         const hidden_code = current_theme==="dark" ? dark_hidden_code : light_hidden_code
-        formData.set("code", create_executable(currentLanguage, hidden_code.value, test_template));
+        formData.set("code", hidden_code.value);
         // Perform the AJAX request using Fetch API
         fetch(form.action, {
             method: 'POST',

@@ -1,7 +1,7 @@
 class GuestsController < ApplicationController
     def create
       if session[:user_id]
-        guest_user = User.find_by(id: session[:user_id], guest: true)
+        guest_user = Guest.find_by(id: session[:user_id])
       end
   
       unless guest_user

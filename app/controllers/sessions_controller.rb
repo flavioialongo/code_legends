@@ -8,7 +8,7 @@ class SessionsController < ApplicationController
   end
 
   def login_post
-    user = User.find_by(email: params[:email])
+    user = RegisteredUser.find_by(email: params[:email])
 
     if user.nil?
       flash[:alert] = "User does not exist"
